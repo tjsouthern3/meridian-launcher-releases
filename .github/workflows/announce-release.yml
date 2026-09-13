@@ -1,0 +1,73 @@
+# Posts every published release to the Meridian Discord's #announcements channel
+# through a webhook stored as the DISCORD_WEBHOOK secret. The manual trigger
+# re-announces an existing release by tag (handy for a test, or if a post was missed).
+name: Announce release on Discord
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to announce, e.g. v1.68"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post the release to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          gh api "repos/$REPO/releases/tags/$TAG" > release.json
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          release = json.load(open("release.json"))
+          version = release["tag_name"].lstrip("v")
+          notes = (release.get("body") or "").strip() or "See the release page for details."
+          if len(notes) > 3900:
+              notes = notes[:3900].rstrip() + "…"
+          apk = next((a for a in release.get("assets", []) if a["name"].endswith(".apk")), None)
+          download = (
+              f"[{apk['name']}]({apk['browser_download_url']})" if apk
+              else f"[Release page]({release['html_url']})"
+          )
+          payload = {
+              "embeds": [{
+                  "title": f"Meridian {version} is out",
+                  "url": release["html_url"],
+                  "description": notes,
+                  "color": 0x8B5CF6,
+                  "fields": [
+                      {
+                          "name": "Get it",
+                          "value": f"{download} · [Google Play](https://play.google.com/store/apps/details?id=com.meridian_launcher.pro)",
+                      },
+                      {
+                          "name": "Updating",
+                          "value": (
+                              "Obtainium picks this up automatically. Sideloading by hand? "
+                              "Install the APK over your current version and everything stays. "
+                              "Play updates can lag a little while Google reviews them."
+                          ),
+                      },
+                  ],
+                  "footer": {"text": "meridian-launcher.com"},
+              }]
+          }
+          req = urllib.request.Request(
+              os.environ["DISCORD_WEBHOOK"] + "?wait=true",
+              data=json.dumps(payload).encode(),
+              headers={"Content-Type": "application/json", "User-Agent": "meridian-release-announcer"},
+          )
+          with urllib.request.urlopen(req) as resp:
+              print("Discord responded", resp.status)
+          PY
