@@ -1,0 +1,47 @@
+# Posts a one-off message (not a release) to the Meridian Discord's #announcements
+# channel, through the same DISCORD_WEBHOOK secret announce-release.yml uses.
+# Run it from the Actions tab or: gh workflow run announce-message.yml -f title=… -f message=…
+name: Announce message on Discord
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Heading of the post"
+        required: true
+      message:
+        description: "Body, Discord markdown; \\n for a new line"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post the message to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TITLE: ${{ inputs.title }}
+          MESSAGE: ${{ inputs.message }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          payload = {
+              "embeds": [{
+                  "title": os.environ["TITLE"][:256],
+                  "description": os.environ["MESSAGE"].replace("\\n", "\n")[:4000],
+                  "color": 0x8B5CF6,
+                  "footer": {"text": "meridian-launcher.com"},
+              }]
+          }
+          req = urllib.request.Request(
+              os.environ["DISCORD_WEBHOOK"] + "?wait=true",
+              data=json.dumps(payload).encode(),
+              headers={"Content-Type": "application/json", "User-Agent": "meridian-release-announcer"},
+          )
+          with urllib.request.urlopen(req) as resp:
+              print("Discord responded", resp.status)
+          PY
