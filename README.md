@@ -7,7 +7,7 @@ sideload the APK can download it here and get automatic updates through Obtainiu
 ## Giveaway
 
 Free Google Play promo codes, while they last: **[claim one here](https://tjsouthern3.github.io/meridian-launcher-releases/)**.
-Sign in with Discord (member of the server, account 30+ days old), one code per account.
+Sign in with Discord (you need to be in the server), one code per account.
 
 ## Get it
 
