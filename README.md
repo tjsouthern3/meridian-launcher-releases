@@ -4,6 +4,11 @@ Signed release builds of [Meridian Launcher](https://meridian-launcher.com) for 
 one per version. The source lives in a private repository; this one exists so people who
 sideload the APK can download it here and get automatic updates through Obtainium.
 
+## Giveaway
+
+Free Google Play promo codes, while they last: **[claim one here](https://tjsouthern3.github.io/meridian-launcher-releases/)**.
+Sign in with Discord (member of the server, account 30+ days old), one code per account.
+
 ## Get it
 
 - **Google Play** — paid once, updates automatically:
